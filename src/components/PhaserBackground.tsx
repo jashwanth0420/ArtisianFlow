@@ -6,7 +6,7 @@ import { EventBus } from '@/game/EventBus';
 export function PhaserBackground() {
   const gameRef = useRef<Phaser.Game | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const { scrollStop, translateX, progress, scale } = useHorizontalScroll();
+  const { scrollStop, translateX, progress, scale, isMobile } = useHorizontalScroll();
 
   // Init once
   useEffect(() => {
@@ -30,8 +30,8 @@ export function PhaserBackground() {
 
   // Send continuous scroll data to Phaser
   useEffect(() => {
-    EventBus.emit('sync-scroll', { stop: scrollStop, tx: translateX, progress, scale });
-  }, [scrollStop, translateX, progress, scale]);
+    EventBus.emit('sync-scroll', { stop: scrollStop, tx: translateX, progress, scale, isMobile });
+  }, [scrollStop, translateX, progress, scale, isMobile]);
 
   return (
     <div
