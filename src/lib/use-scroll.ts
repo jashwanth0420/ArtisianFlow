@@ -92,6 +92,8 @@ export function useHorizontalScroll() {
   // Main animation ticker
   useEffect(() => {
     let animId: number;
+    let lastProgressTime = 0;
+    let lastRenderedTx = -9999;
 
     const tick = (now: number) => {
       if (!phaseStartRef.current) phaseStartRef.current = now;
@@ -102,24 +104,37 @@ export function useHorizontalScroll() {
       if (isPanningRef.current) {
         const panElapsed = now - panStartRef.current;
         const panT = Math.min(1, panElapsed / PAN_DURATION);
-        // Smooth sine ease in-out
-        const ease = -(Math.cos(Math.PI * panT) - 1) / 2;
+        // Smooth cubic ease in-out
+        const ease = panT < 0.5 ? 4 * panT * panT * panT : 1 - Math.pow(-2 * panT + 2, 3) / 2;
         const currentTx = panFromTxRef.current + (panToTxRef.current - panFromTxRef.current) * ease;
-        setTranslateX(currentTx);
+        
+        if (Math.abs(currentTx - lastRenderedTx) > 0.5) {
+          lastRenderedTx = currentTx;
+          setTranslateX(currentTx);
+        }
 
         if (panT >= 1) {
           isPanningRef.current = false;
           phaseStartRef.current = now; // Reset step timer after pan finishes
         }
       } else {
-        // Steady on current node
+        // Steady on current node — only update if actually shifted
         const currentTx = getTargetTx(scrollStopRef.current, w, scaleRef.current);
-        setTranslateX(currentTx);
+        if (Math.abs(currentTx - lastRenderedTx) > 0.5) {
+          lastRenderedTx = currentTx;
+          setTranslateX(currentTx);
+        }
 
         if (isPlayingRef.current) {
           const stepElapsed = now - (phaseStartRef.current || now);
-          const ratio = Math.min(1, stepElapsed / STEP_DURATION);
-          setStepProgress(ratio);
+          
+          // Throttle progress bar state updates to ~60ms intervals (16fps)
+          // CSS linear transition smoothly handles sub-frame interpolation
+          if (now - lastProgressTime > 60 || stepElapsed >= STEP_DURATION) {
+            lastProgressTime = now;
+            const ratio = Math.min(1, stepElapsed / STEP_DURATION);
+            setStepProgress(ratio);
+          }
 
           // Once duration completes, advance to next
           if (stepElapsed >= STEP_DURATION) {

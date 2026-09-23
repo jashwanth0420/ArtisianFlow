@@ -1,4 +1,4 @@
-// ── Node data for the horizontal system map ──
+// Data types for the system map
 
 export interface NodeData {
   id: string;
@@ -13,26 +13,26 @@ export interface NodeData {
 export interface SatelliteData {
   id: string;
   label: string;
-  sublabel: string;
   x: number;
   y: number;
-  width: number;
+  parentId: string;
 }
 
 // Canvas constants
 export const CANVAS_WIDTH = 6400;
-export const CANVAS_HEIGHT = 900;
+export const CANVAS_HEIGHT = 800;
 export const SCROLL_HEIGHT = 2400;
 
 // 8 nodes — the flow from the diagram
-// Nodes 4 & 5 (DYNAMIC PRICING + PRODUCT DISCOVERY) branch from node 3 and merge into node 6
+// Configured with balanced vertical positioning (y: 110 - 330)
+// so the entire flow fits completely inside the webpage viewport without clipping
 export const nodes: NodeData[] = [
   {
     id: 'artisan',
     nodeId: 'N-00',
     label: 'ARTISAN',
     x: 400,
-    y: 280,
+    y: 220,
     width: 340,
     type: 'input',
   },
@@ -41,7 +41,7 @@ export const nodes: NodeData[] = [
     nodeId: 'N-01',
     label: 'AI PRODUCT STUDIO',
     x: 1200,
-    y: 120,
+    y: 160,
     width: 340,
     type: 'process',
   },
@@ -50,7 +50,7 @@ export const nodes: NodeData[] = [
     nodeId: 'N-02',
     label: 'MULTILINGUAL AI',
     x: 2000,
-    y: 400,
+    y: 260,
     width: 340,
     type: 'process',
   },
@@ -59,7 +59,7 @@ export const nodes: NodeData[] = [
     nodeId: 'N-03',
     label: 'SMART CATALOG ENGINE',
     x: 2900,
-    y: 130,
+    y: 160,
     width: 400,
     type: 'process',
   },
@@ -68,7 +68,7 @@ export const nodes: NodeData[] = [
     nodeId: 'N-04',
     label: 'DYNAMIC PRICING',
     x: 3800,
-    y: 70,
+    y: 105,
     width: 340,
     type: 'branch',
   },
@@ -77,7 +77,7 @@ export const nodes: NodeData[] = [
     nodeId: 'N-05',
     label: 'PRODUCT DISCOVERY',
     x: 3800,
-    y: 490,
+    y: 330,
     width: 340,
     type: 'branch',
   },
@@ -86,7 +86,7 @@ export const nodes: NodeData[] = [
     nodeId: 'N-06',
     label: 'DIGITAL MARKETPLACE',
     x: 4700,
-    y: 250,
+    y: 210,
     width: 400,
     type: 'hub',
   },
@@ -95,7 +95,7 @@ export const nodes: NodeData[] = [
     nodeId: 'N-07',
     label: 'YEAR-ROUND MARKET ACCESS',
     x: 5600,
-    y: 260,
+    y: 220,
     width: 460,
     type: 'outcome',
   },
@@ -104,24 +104,33 @@ export const nodes: NodeData[] = [
 // No satellite nodes in this flow
 export const satellites: SatelliteData[] = [];
 
-// Scroll-stop mapping: nodes 4 & 5 are both active at scroll stop 4
 // 7 scroll stops for 8 nodes
 export const SCROLL_STOPS = 7;
 
-// Maps a scroll-stop index to which node indices are active
+// Mapping scrollStop (0-6) to active node indices
 export function getActiveNodeIndices(scrollStop: number): number[] {
-  if (scrollStop <= 3) return [scrollStop];
-  if (scrollStop === 4) return [4, 5]; // branch — both active
-  if (scrollStop === 5) return [6];
-  if (scrollStop === 6) return [7];
-  return [0];
+  switch (scrollStop) {
+    case 0: return [0];       // N-00: Artisan
+    case 1: return [1];       // N-01: AI Product Studio
+    case 2: return [2];       // N-02: Multilingual AI
+    case 3: return [3];       // N-03: Smart Catalog Engine
+    case 4: return [4, 5];    // N-04 + N-05: Dynamic Pricing & Product Discovery (branch)
+    case 5: return [6];       // N-06: Digital Marketplace
+    case 6: return [7];       // N-07: Year-Round Market Access
+    default: return [0];
+  }
 }
 
-// Get display label for a scroll stop
+// Labels for HUD display at each scroll stop
 export function getScrollStopLabel(scrollStop: number): string {
-  if (scrollStop <= 3) return nodes[scrollStop].label;
-  if (scrollStop === 4) return 'DYNAMIC PRICING · PRODUCT DISCOVERY';
-  if (scrollStop === 5) return nodes[6].label;
-  if (scrollStop === 6) return nodes[7].label;
-  return nodes[0].label;
+  switch (scrollStop) {
+    case 0: return 'ARTISAN';
+    case 1: return 'AI PRODUCT STUDIO';
+    case 2: return 'MULTILINGUAL AI';
+    case 3: return 'SMART CATALOG ENGINE';
+    case 4: return 'DYNAMIC PRICING · PRODUCT DISCOVERY';
+    case 5: return 'DIGITAL MARKETPLACE';
+    case 6: return 'YEAR-ROUND MARKET ACCESS';
+    default: return 'SYSTEM MAP';
+  }
 }

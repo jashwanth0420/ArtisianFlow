@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Play, Pause, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Play, Pause, ChevronLeft, ChevronRight, Volume2, VolumeX } from 'lucide-react';
 import { SCROLL_STOPS } from '@/lib/nodes';
 
 interface ScrollProgressProps {
@@ -9,7 +9,9 @@ interface ScrollProgressProps {
   stepProgress?: number;
   scrollStop: number;
   isPlaying?: boolean;
+  soundOn?: boolean;
   togglePlay?: () => void;
+  toggleSound?: () => void;
   nextStep?: () => void;
   prevStep?: () => void;
   goToStop?: (index: number) => void;
@@ -20,7 +22,9 @@ export function ScrollProgress({
   stepProgress = 0,
   scrollStop,
   isPlaying = true, 
+  soundOn = true,
   togglePlay, 
+  toggleSound,
   nextStep, 
   prevStep, 
   goToStop 
@@ -54,6 +58,15 @@ export function ScrollProgress({
               >
                 <ChevronRight size={14} />
               </button>
+              {toggleSound && (
+                <button
+                  onClick={toggleSound}
+                  className="p-1 ml-1 rounded hover:bg-white/10 text-muted-foreground hover:text-white transition-colors"
+                  title={soundOn ? "Mute audio" : "Enable voice audio"}
+                >
+                  {soundOn ? <Volume2 size={13} className="text-emerald-400" /> : <VolumeX size={13} className="text-muted-foreground" />}
+                </button>
+              )}
             </div>
           )}
         </div>

@@ -17,9 +17,20 @@ import {
   TrendingUp, 
   Telescope, 
   Store, 
-  Globe 
+  Globe,
+  Volume2,
+  VolumeX,
+  Radio
 } from 'lucide-react';
 import { PhaserBackground } from '@/components/PhaserBackground';
+import { VoiceWaveform } from '@/components/voice-waveform';
+import { 
+  speakPhrase, 
+  playMultilingualShowcase, 
+  enableAudio, 
+  disableAudio, 
+  MULTILINGUAL_PHRASES 
+} from '@/lib/multilingual-audio';
 
 export function SystemCanvas() {
   const { 
@@ -39,8 +50,34 @@ export function SystemCanvas() {
   const activeIndices = getActiveNodeIndices(scrollStop);
   const activeLabel = getScrollStopLabel(scrollStop);
 
+  const [soundOn, setSoundOn] = React.useState(true);
+  const [activeSpeechIdx, setActiveSpeechIdx] = React.useState<number | null>(null);
+
+  const toggleSound = () => {
+    if (soundOn) {
+      disableAudio();
+      setSoundOn(false);
+    } else {
+      enableAudio();
+      setSoundOn(true);
+      if (scrollStop === 2) {
+        playMultilingualShowcase((idx) => setActiveSpeechIdx(idx));
+      }
+    }
+  };
+
+  const handlePlayLanguage = (idx: number) => {
+    enableAudio();
+    setSoundOn(true);
+    setActiveSpeechIdx(idx);
+    speakPhrase(idx, () => setActiveSpeechIdx(null));
+  };
+
   return (
-    <div className="relative w-full h-screen overflow-hidden select-none">
+    <div 
+      className="relative w-full h-screen overflow-hidden select-none"
+      onClick={() => enableAudio()}
+    >
       {/* Phaser 2D Story Animation Background */}
       <PhaserBackground />
 
@@ -63,7 +100,7 @@ export function SystemCanvas() {
         <>
           <div className="sc-grid fixed inset-0 overflow-hidden z-10" style={{ pointerEvents: 'none' }}>
             <div
-              className="absolute left-0 top-16 md:top-20 origin-top-left will-change-transform"
+              className="absolute left-0 top-10 md:top-12 origin-top-left will-change-transform"
               style={{
                 width: CANVAS_WIDTH,
                 height: CANVAS_HEIGHT,
@@ -125,6 +162,47 @@ export function SystemCanvas() {
                   <DataRow label="Input" value="22+ Regional Dialects" />
                   <DataRow label="Process" value="Speech → Neural Translation" highlight color="var(--blue)" />
                   <DataRow label="Output" value="Global Multilingual Copy" />
+
+                  {/* Interactive Multilingual Voice & Waveform */}
+                  <div className="pt-2.5 mt-2 border-t border-white/10">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <div className="flex items-center gap-1.5 font-mono text-[9px] text-[var(--blue)] font-bold">
+                        <Radio size={11} className={activeIndices.includes(2) ? "animate-pulse text-blue-400" : ""} />
+                        <span>VOICE SYNTHESIS</span>
+                      </div>
+                      <button
+                        onClick={() => {
+                          enableAudio();
+                          setSoundOn(true);
+                          playMultilingualShowcase((i) => setActiveSpeechIdx(i));
+                        }}
+                        className="px-2 py-0.5 rounded bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 border border-blue-500/40 text-[9px] font-mono flex items-center gap-1 transition-colors"
+                      >
+                        <span>▶ Play Voices</span>
+                      </button>
+                    </div>
+
+                    <div className="my-1.5">
+                      <VoiceWaveform isActive={activeIndices.includes(2) && soundOn} barCount={26} />
+                    </div>
+
+                    <div className="grid grid-cols-4 gap-1 mt-1.5">
+                      {MULTILINGUAL_PHRASES.map((phrase, i) => (
+                        <button
+                          key={i}
+                          onClick={() => handlePlayLanguage(i)}
+                          className={`py-1 px-1 rounded text-center border font-mono text-[9px] transition-all ${
+                            activeSpeechIdx === i 
+                              ? 'bg-blue-500/30 border-blue-400 text-white font-bold'
+                              : 'bg-white/5 border-white/10 text-muted-foreground hover:bg-white/10 hover:text-white'
+                          }`}
+                          title={`Listen to ${phrase.label}: ${phrase.nativeText}`}
+                        >
+                          {phrase.label.split(' ')[0]}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </NodeCard>
 
@@ -233,7 +311,9 @@ export function SystemCanvas() {
             stepProgress={stepProgress}
             scrollStop={scrollStop}
             isPlaying={isPlaying}
+            soundOn={soundOn}
             togglePlay={togglePlay}
+            toggleSound={toggleSound}
             nextStep={nextStep}
             prevStep={prevStep}
             goToStop={goToStop}

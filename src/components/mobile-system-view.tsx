@@ -14,21 +14,31 @@ import {
   Pause,
   ChevronLeft,
   ChevronRight,
-  Sparkles
+  Sparkles,
+  Volume2,
+  VolumeX,
+  Radio
 } from 'lucide-react';
 import { SCROLL_STOPS } from '@/lib/nodes';
+import { 
+  speakPhrase, 
+  playMultilingualShowcase, 
+  enableAudio, 
+  disableAudio, 
+  MULTILINGUAL_PHRASES 
+} from '@/lib/multilingual-audio';
 
 interface MobileSystemViewProps {
   scrollStop: number;
-  stepProgress: number; // 0 to 1 countdown for current step
+  stepProgress: number;
   isPlaying: boolean;
   togglePlay: () => void;
   nextStep: () => void;
   prevStep: () => void;
-  goToStop: (index: number) => void;
+  goToStop: (stop: number) => void;
 }
 
-interface StepDetails {
+interface StepDetail {
   id: string;
   name: string;
   category: string;
@@ -39,14 +49,14 @@ interface StepDetails {
   branchRows?: { label: string; value: string; highlight?: boolean }[];
 }
 
-const STEP_DATA: StepDetails[] = [
+const STEP_DATA: StepDetail[] = [
   {
     id: 'N-00',
-    name: 'ARTISAN',
-    category: 'PHYSICAL WORKSHOP',
+    name: 'TRADITIONAL ARTISAN',
+    category: 'CRAFT ORIGIN',
     accent: 'var(--copper)',
     icon: <UserRound size={16} />,
-    statusBadge: 'Traditional Craftsmanship',
+    statusBadge: 'Traditional Craftsman',
     rows: [
       { label: 'Input', value: 'Handmade Physical Product' },
       { label: 'Input', value: 'Artisan Voice Description' },
@@ -82,14 +92,14 @@ const STEP_DATA: StepDetails[] = [
   {
     id: 'N-03',
     name: 'SMART CATALOG ENGINE',
-    category: 'DIGITAL CATALOGUER',
+    category: 'PRODUCT STRUCTURING',
     accent: 'var(--emerald)',
     icon: <Cpu size={16} />,
-    statusBadge: 'Automated Metadata Generation',
+    statusBadge: 'Automated Indexing',
     rows: [
-      { label: 'Inputs', value: 'Enhanced Photo + Voice Story' },
-      { label: 'Process', value: 'AI Generated Story & SEO Keywords' },
-      { label: 'Output', value: 'VERIFIED DIGITAL CATALOG LISTING', highlight: true },
+      { label: 'Inputs', value: 'Enhanced Photo + Voice Translation' },
+      { label: 'Process', value: 'Rich Metadata & Category Extraction' },
+      { label: 'Output', value: 'Verified Digital Catalog Asset', highlight: true },
     ]
   },
   {
@@ -111,29 +121,29 @@ const STEP_DATA: StepDetails[] = [
   {
     id: 'N-06',
     name: 'DIGITAL MARKETPLACE',
-    category: 'MULTI-CHANNEL DISTRIBUTION',
+    category: 'COMMERCE CHANNELS',
     accent: 'var(--blue)',
     icon: <Store size={16} />,
-    statusBadge: 'Direct Market Linkage',
+    statusBadge: 'Omnichannel Pipeline',
     rows: [
-      { label: 'Channel 1', value: 'B2B Bulk Institutional Orders' },
-      { label: 'Channel 2', value: 'Government E-Marketplace (GeM)' },
-      { label: 'Channel 3', value: 'Direct Global Consumers (D2C)', highlight: true },
+      { label: 'Wholesale', value: 'B2B Institutional Wholesalers' },
+      { label: 'Government', value: 'Direct GeM Integration' },
+      { label: 'Direct', value: 'Global D2C Marketplace Access', highlight: true },
     ]
   },
   {
     id: 'N-07',
     name: 'YEAR-ROUND ACCESS',
-    category: 'EMPOWERED ENTERPRISE',
+    category: 'SUSTAINABLE OUTCOME',
     accent: 'var(--copper)',
     icon: <Globe size={16} />,
-    statusBadge: 'Sustainable Livelihood',
+    statusBadge: 'Continuous Growth',
     rows: [
-      { label: 'Reach', value: 'Pan-India & Global Buyers' },
-      { label: 'Revenue', value: 'Continuous Year-Round Income' },
-      { label: 'Impact', value: 'Sustained Cultural Heritage', highlight: true },
+      { label: 'Market Reach', value: 'Pan-India & International Reach' },
+      { label: 'Cash Flow', value: 'Consistent Year-Round Revenue' },
+      { label: 'Impact', value: 'Sustainable Artisan Livelihood', highlight: true },
     ]
-  },
+  }
 ];
 
 export function MobileSystemView({
@@ -146,148 +156,204 @@ export function MobileSystemView({
   goToStop
 }: MobileSystemViewProps) {
   const currentStep = STEP_DATA[scrollStop] || STEP_DATA[0];
+  const [soundOn, setSoundOn] = React.useState(true);
+  const [activeSpeechIdx, setActiveSpeechIdx] = React.useState<number | null>(null);
+
+  const toggleSound = () => {
+    if (soundOn) {
+      disableAudio();
+      setSoundOn(false);
+    } else {
+      enableAudio();
+      setSoundOn(true);
+      if (scrollStop === 2) {
+        playMultilingualShowcase((idx) => setActiveSpeechIdx(idx));
+      }
+    }
+  };
+
+  const handlePlayLanguage = (idx: number) => {
+    enableAudio();
+    setSoundOn(true);
+    setActiveSpeechIdx(idx);
+    speakPhrase(idx, () => setActiveSpeechIdx(null));
+  };
 
   return (
-    <div className="fixed inset-0 z-20 flex flex-col justify-between px-4 pt-3 pb-5 pointer-events-none select-none">
-      {/* ── Top Header Bar ── */}
-      <header className="pointer-events-auto w-full bg-[#0a0713]/85 backdrop-blur-md rounded-xl p-3 border border-white/10 shadow-lg">
-        <div className="flex items-center justify-between">
+    <div className="fixed inset-0 z-20 flex flex-col justify-between pointer-events-none select-none">
+      {/* ── Top Header Bar (Compact & Sleek) ── */}
+      <header className="pointer-events-auto w-full px-3 pt-3">
+        <div className="bg-[#0a0713]/85 backdrop-blur-md rounded-xl p-2.5 border border-white/10 shadow-lg flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
             </span>
-            <span className="font-mono text-[10px] tracking-wider text-[var(--violet)] font-semibold">
+            <span className="font-mono text-[10px] tracking-wider text-[var(--violet)] font-bold">
               AI MARKET-LINKAGE
             </span>
           </div>
-          <div 
-            className="flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-[10px] font-mono tracking-widest"
-            style={{ 
-              borderColor: currentStep.accent,
-              color: currentStep.accent,
-              backgroundColor: `${currentStep.accent}15`
-            }}
-          >
-            <span>PHASE</span>
-            <span className="font-bold">{String(scrollStop + 1).padStart(2, '0')}</span>
-            <span>/ 07</span>
-          </div>
-        </div>
-        <p className="mt-1 text-[11px] font-sans text-muted-foreground truncate">
-          Smart India Hackathon • Direct Artisan Market Architecture
-        </p>
-      </header>
-
-      {/* ── Center Stage: Active Stage Card ── */}
-      <div className="pointer-events-auto my-auto w-full max-w-[360px] mx-auto transition-all duration-500">
-        <div 
-          className="relative overflow-hidden rounded-2xl border bg-[#0d091a]/90 backdrop-blur-2xl shadow-2xl transition-all duration-500"
-          style={{ 
-            borderColor: `${currentStep.accent}55`,
-            boxShadow: `0 0 35px -10px ${currentStep.accent}40, 0 10px 25px -5px rgba(0,0,0,0.8)`
-          }}
-        >
-          {/* Ambient Corner Glow */}
-          <div 
-            className="absolute -top-16 -right-16 h-36 w-36 rounded-full opacity-25 blur-2xl pointer-events-none transition-colors duration-700"
-            style={{ backgroundColor: currentStep.accent }}
-          />
-
-          {/* Card Header */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 bg-black/40">
-            <div className="flex items-center gap-2.5">
-              <span 
-                className="p-1.5 rounded-lg flex items-center justify-center transition-colors duration-500"
-                style={{ 
-                  backgroundColor: `${currentStep.accent}20`,
-                  color: currentStep.accent 
-                }}
-              >
-                {currentStep.icon}
-              </span>
-              <div>
-                <div className="font-mono text-[9px] tracking-widest text-muted-foreground uppercase">
-                  {currentStep.id} • {currentStep.category}
-                </div>
-                <div className="font-sans text-[13px] font-bold text-foreground tracking-wide">
-                  {currentStep.name}
-                </div>
-              </div>
-            </div>
-
-            <span 
-              className="text-[9px] font-mono px-2 py-0.5 rounded-md border font-medium"
-              style={{
-                borderColor: `${currentStep.accent}40`,
+          <div className="flex items-center gap-2">
+            <button
+              onClick={toggleSound}
+              className="p-1 rounded-md bg-white/10 hover:bg-white/20 text-white/80 transition-colors flex items-center gap-1 text-[10px] font-mono"
+              title={soundOn ? "Mute audio" : "Enable voice audio"}
+            >
+              {soundOn ? <Volume2 size={13} className="text-emerald-400" /> : <VolumeX size={13} className="text-muted-foreground" />}
+            </button>
+            <div 
+              className="flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-[10px] font-mono tracking-widest font-semibold"
+              style={{ 
+                borderColor: currentStep.accent,
                 color: currentStep.accent,
-                backgroundColor: `${currentStep.accent}10`
+                backgroundColor: `${currentStep.accent}15`
               }}
             >
-              {currentStep.statusBadge}
-            </span>
-          </div>
-
-          {/* Card Rows */}
-          <div className="p-4 space-y-2">
-            {currentStep.rows.map((row, idx) => (
-              <div 
-                key={idx} 
-                className="flex items-center justify-between gap-3 py-1.5 border-b border-white/5 last:border-0"
-              >
-                <span className="font-mono text-[10px] text-muted-foreground/80 tracking-wider uppercase">
-                  {row.label}
-                </span>
-                <span 
-                  className="text-right text-[11px] font-medium tracking-wide"
-                  style={{ color: row.highlight ? currentStep.accent : 'rgba(232, 228, 239, 0.95)' }}
-                >
-                  {row.value}
-                </span>
-              </div>
-            ))}
-
-            {/* If Phase 4 branch rows exist */}
-            {currentStep.branchRows && (
-              <div className="pt-2 mt-2 border-t border-white/10">
-                <div className="font-mono text-[9px] tracking-widest text-[var(--violet)] uppercase mb-1.5 flex items-center gap-1">
-                  <Telescope size={12} />
-                  <span>PARALLEL BRANCH: PRODUCT DISCOVERY</span>
-                </div>
-                {currentStep.branchRows.map((row, idx) => (
-                  <div key={idx} className="flex items-center justify-between gap-3 py-1 text-[11px]">
-                    <span className="font-mono text-[10px] text-muted-foreground/80 tracking-wider uppercase">
-                      {row.label}
-                    </span>
-                    <span 
-                      className="text-right font-medium"
-                      style={{ color: row.highlight ? 'var(--violet)' : 'rgba(232, 228, 239, 0.95)' }}
-                    >
-                      {row.value}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Card Footer Live Badge */}
-          <div className="px-4 py-2 bg-black/50 border-t border-white/5 flex items-center justify-between text-[10px] font-mono text-muted-foreground">
-            <span className="flex items-center gap-1.5">
-              <Sparkles size={11} style={{ color: currentStep.accent }} />
-              <span>Living Artisan Flow</span>
-            </span>
-            <span className="text-[9px] tracking-widest uppercase">
-              Phase {scrollStop + 1} Active
-            </span>
+              <span>PHASE</span>
+              <span className="font-bold">{String(scrollStop + 1).padStart(2, '0')}</span>
+              <span>/ 07</span>
+            </div>
           </div>
         </div>
-      </div>
+      </header>
 
-      {/* ── Bottom Controls & Timeline Bar ── */}
-      <footer className="pointer-events-auto w-full bg-[#0a0713]/90 backdrop-blur-xl rounded-2xl p-3 border border-white/10 shadow-2xl">
-        {/* Step Indicator Pills */}
-        <div className="flex items-center justify-between gap-1.5 mb-3">
+      {/* ── Upper Visual Viewport Spacer (100% unobstructed window for Phaser 2D world & artisan) ── */}
+      <div className="flex-1 min-h-[140px]" />
+
+      {/* ── Bottom Half: Unified Glassmorphic Phase Dashboard & Controls ── */}
+      <div 
+        className="pointer-events-auto w-full bg-[#0a0713]/94 backdrop-blur-2xl rounded-t-3xl border-t border-white/15 px-4 pt-3.5 pb-4 shadow-2xl transition-all duration-500 flex flex-col gap-2.5 max-h-[58vh] overflow-y-auto"
+        style={{
+          boxShadow: `0 -10px 35px -5px ${currentStep.accent}30, 0 10px 25px -5px rgba(0,0,0,0.9)`
+        }}
+      >
+        {/* Card Header */}
+        <div className="flex items-center justify-between pb-2 border-b border-white/10">
+          <div className="flex items-center gap-2">
+            <span 
+              className="p-1.5 rounded-lg flex items-center justify-center transition-colors duration-500"
+              style={{ 
+                backgroundColor: `${currentStep.accent}20`,
+                color: currentStep.accent 
+              }}
+            >
+              {currentStep.icon}
+            </span>
+            <div>
+              <div className="font-mono text-[9px] tracking-widest text-muted-foreground uppercase">
+                {currentStep.id} • {currentStep.category}
+              </div>
+              <div className="font-sans text-[13px] font-bold text-foreground tracking-wide">
+                {currentStep.name}
+              </div>
+            </div>
+          </div>
+
+          <span 
+            className="text-[9px] font-mono px-2 py-0.5 rounded-md border font-medium"
+            style={{
+              borderColor: `${currentStep.accent}40`,
+              color: currentStep.accent,
+              backgroundColor: `${currentStep.accent}10`
+            }}
+          >
+            {currentStep.statusBadge}
+          </span>
+        </div>
+
+        {/* Card Rows */}
+        <div className="space-y-1.5">
+          {currentStep.rows.map((row, idx) => (
+            <div 
+              key={idx} 
+              className="flex items-center justify-between gap-3 py-1 border-b border-white/5 last:border-0"
+            >
+              <span className="font-mono text-[10px] text-muted-foreground/80 tracking-wider uppercase">
+                {row.label}
+              </span>
+              <span 
+                className="text-right text-[11px] font-medium tracking-wide"
+                style={{ color: row.highlight ? currentStep.accent : 'rgba(232, 228, 239, 0.95)' }}
+              >
+                {row.value}
+              </span>
+            </div>
+          ))}
+
+          {/* Interactive Multilingual Voice Feature (Phase 2) */}
+          {scrollStop === 2 && (
+            <div className="pt-2 mt-1 border-t border-white/10">
+              <div className="flex items-center justify-between mb-1.5">
+                <div className="font-mono text-[9px] tracking-wider text-[var(--blue)] uppercase flex items-center gap-1.5 font-bold">
+                  <Radio size={12} className="animate-pulse text-blue-400" />
+                  <span>VOICE SYNTHESIS</span>
+                </div>
+                <button
+                  onClick={() => {
+                    enableAudio();
+                    setSoundOn(true);
+                    playMultilingualShowcase((i) => setActiveSpeechIdx(i));
+                  }}
+                  className="px-2 py-0.5 rounded bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 border border-blue-500/40 text-[9px] font-mono flex items-center gap-1 transition-colors"
+                >
+                  <span>▶ Play Voices</span>
+                </button>
+              </div>
+
+              {/* Regional Language Interactive Speech Chips */}
+              <div className="grid grid-cols-2 gap-1.5">
+                {MULTILINGUAL_PHRASES.map((phrase, i) => {
+                  const isSelected = activeSpeechIdx === i;
+                  return (
+                    <button
+                      key={i}
+                      onClick={() => handlePlayLanguage(i)}
+                      className={`p-1.5 rounded-lg border text-left transition-all ${
+                        isSelected
+                          ? 'bg-blue-500/25 border-blue-400 text-white shadow-sm ring-1 ring-blue-400/40'
+                          : 'bg-white/5 border-white/10 text-muted-foreground hover:bg-white/10 hover:text-foreground'
+                      }`}
+                    >
+                      <div className="text-[10px] font-bold tracking-wide flex items-center justify-between">
+                        <span>{phrase.label}</span>
+                        <span className="text-[9px] opacity-75">🔊</span>
+                      </div>
+                      <div className="text-[9px] truncate opacity-85 mt-0.5 font-sans">
+                        {phrase.nativeText}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* If Phase 4 branch rows exist */}
+          {currentStep.branchRows && (
+            <div className="pt-1.5 mt-1 border-t border-white/10">
+              <div className="font-mono text-[9px] tracking-widest text-[var(--violet)] uppercase mb-1 flex items-center gap-1 font-bold">
+                <Telescope size={12} />
+                <span>PARALLEL BRANCH: PRODUCT DISCOVERY</span>
+              </div>
+              {currentStep.branchRows.map((row, idx) => (
+                <div key={idx} className="flex items-center justify-between gap-3 py-0.5 text-[11px]">
+                  <span className="font-mono text-[10px] text-muted-foreground/80 tracking-wider uppercase">
+                    {row.label}
+                  </span>
+                  <span 
+                    className="text-right font-medium"
+                    style={{ color: row.highlight ? 'var(--violet)' : 'rgba(232, 228, 239, 0.95)' }}
+                  >
+                    {row.value}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* ── Timeline Navigation: Step Indicator Pills (01 - 07) ── */}
+        <div className="flex items-center justify-between gap-1 pt-1.5 border-t border-white/10">
           {Array.from({ length: SCROLL_STOPS }).map((_, idx) => {
             const isActive = idx === scrollStop;
             const isPast = idx < scrollStop;
@@ -297,7 +363,7 @@ export function MobileSystemView({
               <button
                 key={idx}
                 onClick={() => goToStop(idx)}
-                className={`flex-1 py-1 rounded-md text-[10px] font-mono font-bold transition-all duration-300 border ${
+                className={`flex-1 py-1 rounded text-[10px] font-mono font-bold transition-all duration-300 border ${
                   isActive 
                     ? 'border-transparent text-black shadow-md scale-105' 
                     : isPast 
@@ -313,9 +379,9 @@ export function MobileSystemView({
           })}
         </div>
 
-        {/* Play/Pause & Status Line */}
-        <div className="flex items-center justify-between text-[11px] font-mono mb-2">
-          <div className="flex items-center gap-2">
+        {/* ── Playback Controls & Status Line ── */}
+        <div className="flex items-center justify-between text-[11px] font-mono pt-1">
+          <div className="flex items-center gap-1.5">
             <button
               onClick={prevStep}
               className="p-1 rounded-md hover:bg-white/10 text-muted-foreground hover:text-white transition-colors"
@@ -325,10 +391,11 @@ export function MobileSystemView({
             </button>
             <button
               onClick={togglePlay}
-              className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors flex items-center justify-center"
+              className="px-2 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors flex items-center gap-1"
               title={isPlaying ? "Pause Flow" : "Resume Auto-Play"}
             >
-              {isPlaying ? <Pause size={13} /> : <Play size={13} className="ml-0.5" />}
+              {isPlaying ? <Pause size={12} /> : <Play size={12} className="ml-0.5" />}
+              <span className="text-[9px] uppercase font-bold">{isPlaying ? "PAUSE" : "PLAY"}</span>
             </button>
             <button
               onClick={nextStep}
@@ -340,7 +407,7 @@ export function MobileSystemView({
           </div>
 
           <div className="text-right">
-            <span className="text-[10px] tracking-wider text-muted-foreground">
+            <span className="text-[10px] tracking-wider text-muted-foreground font-mono">
               {isPlaying ? (
                 <span className="flex items-center gap-1.5">
                   <span className="animate-pulse text-emerald-400">●</span>
@@ -354,7 +421,7 @@ export function MobileSystemView({
         </div>
 
         {/* Continuous Step Countdown Progress Bar */}
-        <div className="h-1 w-full bg-white/10 rounded-full overflow-hidden">
+        <div className="h-1 w-full bg-white/10 rounded-full overflow-hidden mt-0.5">
           <div 
             className="h-full rounded-full transition-all duration-100 ease-linear"
             style={{ 
@@ -364,7 +431,7 @@ export function MobileSystemView({
             }}
           />
         </div>
-      </footer>
+      </div>
     </div>
   );
 }
