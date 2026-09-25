@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { CANVAS_WIDTH, SCROLL_STOPS } from './nodes';
+import { EventBus } from '@/game/EventBus';
 
 const NODE_X_POSITIONS = [400, 1200, 2000, 2900, 3800, 4700, 5600];
 const NODE_WIDTHS = [340, 340, 340, 400, 340, 400, 460];
@@ -13,8 +14,8 @@ function getTargetTx(stop: number, w: number, s: number) {
   return Math.max(0, Math.min(tx, CANVAS_WIDTH - viewportWidth));
 }
 
-const STEP_DURATION = 5500; // 5.5 seconds per node reading time
-const PAN_DURATION = 1400;  // 1.4 seconds pan transition
+// 28 seconds for a continuous, uninterrupted sequential flow across all 7 phases
+const TOTAL_JOURNEY_MS = 28000;
 
 export function useHorizontalScroll() {
   const [translateX, setTranslateX] = useState(0);
@@ -34,11 +35,12 @@ export function useHorizontalScroll() {
   const scaleRef = useRef(1);
   scaleRef.current = scale;
 
-  const phaseStartRef = useRef<number | null>(null);
-  const isPanningRef = useRef(false);
-  const panFromTxRef = useRef(0);
-  const panToTxRef = useRef(0);
-  const panStartRef = useRef(0);
+  const isMobileRef = useRef(false);
+  isMobileRef.current = isMobile;
+
+  // Timeline reference clock
+  const journeyStartRef = useRef<number | null>(null);
+  const pausedOffsetRef = useRef<number>(0);
 
   // Resize handler
   useEffect(() => {
@@ -46,10 +48,11 @@ export function useHorizontalScroll() {
       const w = window.innerWidth;
       const mobile = w < 768;
       setIsMobile(mobile);
+      isMobileRef.current = mobile;
 
-      // On desktop, scale gently; on mobile, scale is 1 since we render custom mobile layout
       const currentScale = mobile ? 1 : Math.max(0.75, Math.min(1, w / 1400));
       setScale(currentScale);
+      scaleRef.current = currentScale;
     };
 
     window.addEventListener('resize', handleResize);
@@ -57,22 +60,21 @@ export function useHorizontalScroll() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Jump to specific stop
+  // Jump to specific stop along the continuous timeline
   const goToStop = useCallback((targetStop: number) => {
     const clamped = Math.max(0, Math.min(SCROLL_STOPS - 1, targetStop));
-    const w = window.innerWidth;
-    const currentTx = getTargetTx(scrollStopRef.current, w, scaleRef.current);
-    const targetTx = getTargetTx(clamped, w, scaleRef.current);
+    const targetOffset = (clamped / (SCROLL_STOPS - 1)) * TOTAL_JOURNEY_MS;
+    const now = performance.now();
 
-    panFromTxRef.current = currentTx;
-    panToTxRef.current = targetTx;
-    panStartRef.current = performance.now();
-    isPanningRef.current = true;
+    if (isPlayingRef.current) {
+      journeyStartRef.current = now - targetOffset;
+    } else {
+      pausedOffsetRef.current = targetOffset;
+    }
 
     setScrollStop(clamped);
     setProgress(clamped / (SCROLL_STOPS - 1));
     setStepProgress(0);
-    phaseStartRef.current = performance.now();
   }, []);
 
   const nextStep = useCallback(() => {
@@ -86,71 +88,84 @@ export function useHorizontalScroll() {
   }, [goToStop]);
 
   const togglePlay = useCallback(() => {
-    setIsPlaying(prev => !prev);
+    setIsPlaying(prev => {
+      const next = !prev;
+      const now = performance.now();
+      if (next) {
+        // Resuming: sync journey start with the paused offset
+        journeyStartRef.current = now - pausedOffsetRef.current;
+      } else {
+        // Pausing: record current offset
+        if (journeyStartRef.current !== null) {
+          pausedOffsetRef.current = (now - journeyStartRef.current) % TOTAL_JOURNEY_MS;
+        }
+      }
+      return next;
+    });
   }, []);
 
-  // Main animation ticker
+  // Continuous, uninterrupted 60fps sequential motion ticker
   useEffect(() => {
     let animId: number;
     let lastProgressTime = 0;
     let lastRenderedTx = -9999;
+    let lastStop = -1;
 
     const tick = (now: number) => {
-      if (!phaseStartRef.current) phaseStartRef.current = now;
+      if (journeyStartRef.current === null) {
+        journeyStartRef.current = now;
+      }
 
       const w = window.innerWidth;
+      const s = scaleRef.current;
+      const mobile = isMobileRef.current;
 
-      // 1. Handling Pan Animation
-      if (isPanningRef.current) {
-        const panElapsed = now - panStartRef.current;
-        const panT = Math.min(1, panElapsed / PAN_DURATION);
-        // Smooth cubic ease in-out
-        const ease = panT < 0.5 ? 4 * panT * panT * panT : 1 - Math.pow(-2 * panT + 2, 3) / 2;
-        const currentTx = panFromTxRef.current + (panToTxRef.current - panFromTxRef.current) * ease;
-        
-        if (Math.abs(currentTx - lastRenderedTx) > 0.5) {
-          lastRenderedTx = currentTx;
-          setTranslateX(currentTx);
-        }
-
-        if (panT >= 1) {
-          isPanningRef.current = false;
-          phaseStartRef.current = now; // Reset step timer after pan finishes
-        }
+      let currentElapsed: number;
+      if (isPlayingRef.current) {
+        currentElapsed = (now - journeyStartRef.current) % TOTAL_JOURNEY_MS;
+        pausedOffsetRef.current = currentElapsed;
       } else {
-        // Steady on current node — only update if actually shifted
-        const currentTx = getTargetTx(scrollStopRef.current, w, scaleRef.current);
-        if (Math.abs(currentTx - lastRenderedTx) > 0.5) {
-          lastRenderedTx = currentTx;
-          setTranslateX(currentTx);
-        }
+        currentElapsed = pausedOffsetRef.current;
+      }
 
-        if (isPlayingRef.current) {
-          const stepElapsed = now - (phaseStartRef.current || now);
-          
-          // Throttle progress bar state updates to ~60ms intervals (16fps)
-          // CSS linear transition smoothly handles sub-frame interpolation
-          if (now - lastProgressTime > 60 || stepElapsed >= STEP_DURATION) {
-            lastProgressTime = now;
-            const ratio = Math.min(1, stepElapsed / STEP_DURATION);
-            setStepProgress(ratio);
-          }
+      // Continuous float progression (0.0 to 6.0 across all nodes)
+      const overallProgress = currentElapsed / TOTAL_JOURNEY_MS;
+      const floatStop = overallProgress * (SCROLL_STOPS - 1);
+      const activeStop = Math.min(SCROLL_STOPS - 1, Math.round(floatStop));
 
-          // Once duration completes, advance to next
-          if (stepElapsed >= STEP_DURATION) {
-            const nextStop = (scrollStopRef.current + 1) % SCROLL_STOPS;
-            const nextTx = getTargetTx(nextStop, w, scaleRef.current);
+      // Calculate continuous, smooth subpixel horizontal position
+      const intStop = Math.floor(floatStop);
+      const frac = floatStop - intStop;
+      const txA = getTargetTx(intStop, w, s);
+      const txB = getTargetTx(Math.min(SCROLL_STOPS - 1, intStop + 1), w, s);
+      const smoothTx = txA + (txB - txA) * frac;
 
-            panFromTxRef.current = currentTx;
-            panToTxRef.current = nextTx;
-            panStartRef.current = now;
-            isPanningRef.current = true;
+      // ─── Direct 60 FPS sync to Phaser (eliminates all jitter/flicker) ───
+      EventBus.emit('sync-scroll', {
+        stop: activeStop,
+        tx: smoothTx,
+        progress: overallProgress,
+        scale: s,
+        isMobile: mobile
+      });
 
-            setScrollStop(nextStop);
-            setProgress(nextStop / (SCROLL_STOPS - 1));
-            setStepProgress(0);
-          }
-        }
+      // Update translateX in React for DOM nodes
+      if (Math.abs(smoothTx - lastRenderedTx) > 0.4) {
+        lastRenderedTx = smoothTx;
+        setTranslateX(smoothTx);
+      }
+
+      // Update active stop indicator when crossing boundaries
+      if (activeStop !== lastStop) {
+        lastStop = activeStop;
+        setScrollStop(activeStop);
+      }
+
+      // Throttle UI progress bar states to ~20fps to keep main thread light
+      if (now - lastProgressTime > 50) {
+        lastProgressTime = now;
+        setProgress(overallProgress);
+        setStepProgress(frac);
       }
 
       animId = requestAnimationFrame(tick);
@@ -171,6 +186,6 @@ export function useHorizontalScroll() {
     togglePlay,
     nextStep,
     prevStep,
-    goToStop,
+    goToStop
   };
 }

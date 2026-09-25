@@ -282,6 +282,11 @@ export class ArtisanScene extends Phaser.Scene {
     for (let x = 3850; x < 6350; x += 60) {
       this.groundPlane.lineBetween(x, groundY + 18, x + 30, groundY + 18);
     }
+
+    // Traditional Handmade Craft Pottery Display at Village Porch (Stop 0: X: 350 - 450)
+    this.add.image(350, groundY - 14, 'artisan_craft_basket').setScrollFactor(1).setScale(1.3).setDepth(4);
+    this.add.image(330, groundY - 18, 'artisan_clay_pot').setScrollFactor(1).setScale(1.2).setDepth(4);
+    this.add.image(440, groundY - 18, 'artisan_brass_pot').setScrollFactor(1).setScale(1.2).setDepth(4);
   }
 
   private handleResize(gameSize: Phaser.Structs.Size) {
@@ -304,7 +309,7 @@ export class ArtisanScene extends Phaser.Scene {
   }
 
   private handleSyncScroll(data: { stop: number, tx: number, progress: number, scale?: number, isMobile?: boolean }) {
-    if (!this.cameras || !this.cameras.main) return;
+    if (!this.cameras || !this.cameras.main || !this.artisan) return;
 
     const isMobile = !!data.isMobile;
     const modeChanged = this.isMobileMode !== isMobile;
@@ -313,21 +318,26 @@ export class ArtisanScene extends Phaser.Scene {
     const w = this.cameras.main.width;
     const h = this.cameras.main.height;
 
+    // Calculate the continuous smooth world X position of the artisan from overall progress
+    const totalNodes = NODE_X_POSITIONS.length;
+    const floatNode = data.progress * (totalNodes - 1);
+    const intNode = Math.floor(floatNode);
+    const frac = floatNode - intNode;
+    const currentArtisanX = intNode >= totalNodes - 1 
+      ? NODE_X_POSITIONS[totalNodes - 1] 
+      : NODE_X_POSITIONS[intNode] + (NODE_X_POSITIONS[intNode + 1] - NODE_X_POSITIONS[intNode]) * frac;
+
+    // The artisan glides forward in continuous, uninterrupted walking motion
+    this.artisan.x = currentArtisanX;
+    this.artisan.y = ARTISAN_WORLD_Y;
+
     if (isMobile) {
       this.cameras.main.setZoom(1);
-      // Smoothly pan camera horizontally to center on active phase node in the 6400px world,
-      // and frame vertically so road & artisan are displayed in upper visual stage!
-      const targetScrollX = Math.max(0, Math.min(6400 - w, NODE_X_POSITIONS[data.stop] - (w / 2)));
+      // Smoothly and continuously track the artisan on mobile with zero lag
+      const targetScrollX = Math.max(0, Math.min(6400 - w, currentArtisanX - (w / 2)));
       const targetScrollY = CANONICAL_GROUND_Y - (h * 0.38);
-
-      this.tweens.killTweensOf(this.cameras.main);
-      this.tweens.add({
-        targets: this.cameras.main,
-        scrollX: targetScrollX,
-        scrollY: targetScrollY,
-        duration: 900,
-        ease: 'Cubic.easeInOut'
-      });
+      this.cameras.main.scrollX = targetScrollX;
+      this.cameras.main.scrollY = targetScrollY;
     } else {
       if (data.scale) {
         this.cameras.main.setZoom(data.scale);
@@ -338,42 +348,65 @@ export class ArtisanScene extends Phaser.Scene {
 
     if (this.currentStop !== data.stop || modeChanged) {
       this.currentStop = data.stop;
-      this.transitionToState(data.stop);
+      this.transitionToState(data.stop, currentArtisanX);
     }
   }
 
-  private clearCurrentState() {
-    this.stateItems.forEach(item => {
-      if (item && item.destroy) item.destroy();
-    });
-    
-    this.activeEmitters.forEach(emitter => {
-      if (emitter) emitter.destroy();
-    });
-    
+  private clearCurrentState(immediate: boolean = false) {
+    const oldItems = [...this.stateItems];
+    const oldEmitters = [...this.activeEmitters];
+    this.stateItems = [];
+    this.activeEmitters = [];
+
     if (this.cardSpawnTimer) {
       this.cardSpawnTimer.destroy();
       this.cardSpawnTimer = undefined;
     }
-    
-    this.stateItems = [];
-    this.activeEmitters = [];
+
+    if (immediate) {
+      oldEmitters.forEach(emitter => { if (emitter && emitter.destroy) emitter.destroy(); });
+      oldItems.forEach(item => { if (item && item.destroy) item.destroy(); });
+      return;
+    }
+
+    // Gracefully fade out previous emitters and items
+    oldEmitters.forEach(emitter => {
+      if (emitter) {
+        emitter.stop();
+        this.time.delayedCall(450, () => {
+          if (emitter && emitter.destroy) emitter.destroy();
+        });
+      }
+    });
+
+    oldItems.forEach(item => {
+      if (item && item.scene) {
+        this.tweens.add({
+          targets: item,
+          alpha: 0,
+          duration: 350,
+          ease: 'Sine.easeOut',
+          onComplete: () => {
+            if (item && item.destroy) item.destroy();
+          }
+        });
+      }
+    });
   }
 
   /**
    * Transitions environment lighting, artisan posture, and particle effects per phase
    */
-  private transitionToState(stop: number) {
-    this.clearCurrentState();
+  private transitionToState(stop: number, currentX?: number) {
+    this.clearCurrentState(false);
     
     const h = this.cameras.main.height;
     const w = this.cameras.main.width;
-    const targetX = NODE_X_POSITIONS[stop];
-    const targetY = ARTISAN_WORLD_Y;
+    const targetX = currentX ?? NODE_X_POSITIONS[stop];
 
     this.artisan.setScale(this.isMobileMode ? 1.75 : 2.05);
 
-    // Update ambient wash overlay for emotional atmosphere
+    // Update ambient wash overlay for emotional atmosphere with gentle transition
     this.updateAmbientOverlay(stop, w, h);
 
     // Multilingual audio sound trigger
@@ -383,24 +416,8 @@ export class ArtisanScene extends Phaser.Scene {
       stopMultilingualSpeech();
     }
 
-    // Artisan motion & pose
-    const distance = Math.abs(targetX - this.artisan.x);
-    if (distance > 10) {
-      this.artisan.walk();
-      this.tweens.killTweensOf(this.artisan);
-      this.tweens.add({
-        targets: this.artisan,
-        x: targetX,
-        y: targetY,
-        duration: Math.min(1400, Math.max(500, distance * 1.5)),
-        ease: 'Cubic.easeInOut',
-        onComplete: () => {
-          this.applyArtisanPose(stop);
-        }
-      });
-    } else {
-      this.applyArtisanPose(stop);
-    }
+    // Apply posture without interrupting the smooth continuous walk!
+    this.applyArtisanPose(stop);
 
     // Trigger state-specific particle & holographic effects
     switch(stop) {
@@ -425,11 +442,10 @@ export class ArtisanScene extends Phaser.Scene {
   }
 
   /**
-   * Ambient atmospheric color tint overlay per phase
+   * Ambient atmospheric color tint overlay per phase with smooth crossfade
    */
   private updateAmbientOverlay(stop: number, w: number, h: number) {
     if (!this.ambientOverlay) return;
-    this.ambientOverlay.clear();
 
     const tints: { color: number; alpha: number }[] = [
       { color: 0xc87533, alpha: 0.05 }, // 0: Warm dusk terracotta
@@ -442,8 +458,22 @@ export class ArtisanScene extends Phaser.Scene {
     ];
 
     const current = tints[stop] || tints[0];
-    this.ambientOverlay.fillStyle(current.color, current.alpha);
-    this.ambientOverlay.fillRect(0, 0, w, h);
+    this.tweens.add({
+      targets: this.ambientOverlay,
+      alpha: 0,
+      duration: 250,
+      onComplete: () => {
+        if (!this.ambientOverlay) return;
+        this.ambientOverlay.clear();
+        this.ambientOverlay.fillStyle(current.color, current.alpha);
+        this.ambientOverlay.fillRect(0, 0, w, h);
+        this.tweens.add({
+          targets: this.ambientOverlay,
+          alpha: 1,
+          duration: 350
+        });
+      }
+    });
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -482,7 +512,8 @@ export class ArtisanScene extends Phaser.Scene {
   private createState1(x: number, groundY: number) {
     // STOP 1: AI STUDIO (Computer Vision Scanning Laser & AI Polish Burst)
     const beamW = this.isMobileMode ? 320 : 520;
-    const scanner = this.add.rectangle(x, groundY - 180, beamW, 4, 0x8b5cf6, 0.7);
+    const scanner = this.add.rectangle(x, groundY - 180, beamW, 4, 0x8b5cf6, 0);
+    this.tweens.add({ targets: scanner, alpha: 0.7, duration: 400 });
     this.tweens.add({
       targets: scanner,
       y: groundY - 10,
@@ -550,9 +581,13 @@ export class ArtisanScene extends Phaser.Scene {
     
     const ring1 = this.add.circle(x, groundY - 50, ringRadius1);
     ring1.setStrokeStyle(2.5, 0x10b981, 0.45);
+    ring1.setAlpha(0);
+    this.tweens.add({ targets: ring1, alpha: 1, duration: 400 });
     
     const ring2 = this.add.circle(x, groundY - 50, ringRadius2);
     ring2.setStrokeStyle(1.5, 0x10b981, 0.25);
+    ring2.setAlpha(0);
+    this.tweens.add({ targets: ring2, alpha: 1, duration: 400 });
     
     this.tweens.add({ targets: ring1, scaleX: 0.15, duration: 2400, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
     this.tweens.add({ targets: ring2, scaleY: 0.15, duration: 3200, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
@@ -579,8 +614,9 @@ export class ArtisanScene extends Phaser.Scene {
     
     for (let i = 0; i < barCount; i++) {
       const targetHeight = 45 + Math.random() * 80;
-      const bar = this.add.rectangle(x - offset + i * (this.isMobileMode ? 14 : 22), groundY, this.isMobileMode ? 9 : 12, 10, 0xf43f5e, 0.7);
+      const bar = this.add.rectangle(x - offset + i * (this.isMobileMode ? 14 : 22), groundY, this.isMobileMode ? 9 : 12, 10, 0xf43f5e, 0);
       bar.setOrigin(0.5, 1);
+      this.tweens.add({ targets: bar, alpha: 0.7, duration: 400 });
       
       this.tweens.add({
         targets: bar,
@@ -638,11 +674,11 @@ export class ArtisanScene extends Phaser.Scene {
       tint: [0xffd700, 0xc87533, 0xffffff, 0xf43f5e, 0x10b981]
     });
     
-    const glow = this.add.circle(x, groundY - 50, 260, 0xf59e0b, 0.16);
+    const glow = this.add.circle(x, groundY - 50, 260, 0xf59e0b, 0);
     this.tweens.add({
       targets: glow,
       scale: 1.35,
-      alpha: 0.3,
+      alpha: 0.25,
       duration: 2500,
       yoyo: true,
       repeat: -1,
