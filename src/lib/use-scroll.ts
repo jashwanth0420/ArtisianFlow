@@ -18,7 +18,7 @@ function getTargetTx(stop: number, w: number, s: number) {
 const TOTAL_JOURNEY_MS = 28000;
 
 export function useHorizontalScroll() {
-  const [translateX, setTranslateX] = useState(0);
+  const canvasRef = useRef<HTMLDivElement>(null);
   const [scrollStop, setScrollStop] = useState(0);
   const [progress, setProgress] = useState(0);
   const [stepProgress, setStepProgress] = useState(0);
@@ -53,6 +53,11 @@ export function useHorizontalScroll() {
       const currentScale = mobile ? 1 : Math.max(0.75, Math.min(1, w / 1400));
       setScale(currentScale);
       scaleRef.current = currentScale;
+
+      if (!mobile && canvasRef.current) {
+        const tx = getTargetTx(scrollStopRef.current, w, currentScale);
+        canvasRef.current.style.transform = `scale(${currentScale}) translate3d(-${tx}px, 0, 0)`;
+      }
     };
 
     window.addEventListener('resize', handleResize);
@@ -75,6 +80,13 @@ export function useHorizontalScroll() {
     setScrollStop(clamped);
     setProgress(clamped / (SCROLL_STOPS - 1));
     setStepProgress(0);
+
+    const w = window.innerWidth;
+    const s = scaleRef.current;
+    const tx = getTargetTx(clamped, w, s);
+    if (canvasRef.current) {
+      canvasRef.current.style.transform = `scale(${s}) translate3d(-${tx}px, 0, 0)`;
+    }
   }, []);
 
   const nextStep = useCallback(() => {
@@ -105,10 +117,10 @@ export function useHorizontalScroll() {
   }, []);
 
   // Continuous, uninterrupted 60fps sequential motion ticker
+  // Hardware-accelerated GPU transforms via ref mutation - ZERO React re-render overhead!
   useEffect(() => {
     let animId: number;
     let lastProgressTime = 0;
-    let lastRenderedTx = -9999;
     let lastStop = -1;
 
     const tick = (now: number) => {
@@ -149,20 +161,19 @@ export function useHorizontalScroll() {
         isMobile: mobile
       });
 
-      // Update translateX in React for DOM nodes
-      if (Math.abs(smoothTx - lastRenderedTx) > 0.4) {
-        lastRenderedTx = smoothTx;
-        setTranslateX(smoothTx);
+      // ─── Hardware GPU Transform on DOM Canvas (Direct Compositor Mutation) ───
+      if (canvasRef.current && !mobile) {
+        canvasRef.current.style.transform = `scale(${s}) translate3d(-${smoothTx}px, 0, 0)`;
       }
 
-      // Update active stop indicator when crossing boundaries
+      // Update active stop indicator ONLY when crossing boundaries (every ~4s)
       if (activeStop !== lastStop) {
         lastStop = activeStop;
         setScrollStop(activeStop);
       }
 
-      // Throttle UI progress bar states to ~20fps to keep main thread light
-      if (now - lastProgressTime > 50) {
+      // Throttle UI progress bar state to ~10fps (keeps main thread completely silent and fast)
+      if (now - lastProgressTime > 100) {
         lastProgressTime = now;
         setProgress(overallProgress);
         setStepProgress(frac);
@@ -176,7 +187,7 @@ export function useHorizontalScroll() {
   }, []);
 
   return {
-    translateX,
+    canvasRef,
     scrollStop,
     progress,
     stepProgress,

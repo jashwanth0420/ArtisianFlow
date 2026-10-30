@@ -34,7 +34,7 @@ import {
 
 export function SystemCanvas() {
   const { 
-    translateX, 
+    canvasRef,
     scrollStop, 
     progress, 
     stepProgress,
@@ -100,11 +100,12 @@ export function SystemCanvas() {
         <>
           <div className="sc-grid fixed inset-0 overflow-hidden z-10" style={{ pointerEvents: 'none' }}>
             <div
+              ref={canvasRef}
               className="absolute left-0 top-10 md:top-12 origin-top-left will-change-transform"
               style={{
                 width: CANVAS_WIDTH,
                 height: CANVAS_HEIGHT,
-                transform: `scale(${scale}) translate3d(-${translateX}px, 0, 0)`,
+                transform: `scale(${scale}) translate3d(0, 0, 0)`,
                 pointerEvents: 'auto'
               }}
             >
@@ -123,9 +124,10 @@ export function SystemCanvas() {
                 width={nodes[0].width}
               >
                 <div className="flex flex-col">
-                  <DataRow label="Input" value="Physical Craft Goods" />
-                  <DataRow label="Input" value="Artisan Voice Story" />
-                  <DataRow label="Status" value="Physical Workshop" highlight color="var(--copper)" />
+                  <DataRow label="Product" value="Handcrafted Bell Metal Artifact" />
+                  <DataRow label="Material" value="Cast Brass & Copper Alloy" />
+                  <DataRow label="Heritage" value="Lost-Wax Dhokra Tradition" />
+                  <DataRow label="Status" value="PHYSICAL INVENTORY" highlight color="var(--copper)" />
                 </div>
               </NodeCard>
 
@@ -141,9 +143,10 @@ export function SystemCanvas() {
                 width={nodes[1].width}
               >
                 <div className="flex flex-col">
-                  <DataRow label="Process" value="4K Studio Image Polish" />
-                  <DataRow label="Process" value="Background Removal" />
-                  <DataRow label="Result" value="E-Commerce Photography" highlight color="var(--violet)" />
+                  <DataRow label="Enhance" value="4K Multi-Surface Studio Polish" />
+                  <DataRow label="Lighting" value="Automated Shadow Correction" />
+                  <DataRow label="Format" value="E-Commerce Standard (1:1)" />
+                  <DataRow label="Status" value="STUDIO READY" highlight color="var(--violet)" />
                 </div>
               </NodeCard>
 
@@ -159,9 +162,10 @@ export function SystemCanvas() {
                 width={nodes[2].width}
               >
                 <div className="flex flex-col">
-                  <DataRow label="Input" value="22+ Regional Dialects" />
-                  <DataRow label="Process" value="Speech → Neural Translation" highlight color="var(--blue)" />
-                  <DataRow label="Output" value="Global Multilingual Copy" />
+                  <DataRow label="Dialects" value="22+ Scheduled Indian Languages" />
+                  <DataRow label="Engine" value="Dialect-Aware Neural STT" />
+                  <DataRow label="Copy" value="Localized Regional Storytelling" />
+                  <DataRow label="Status" value="DUAL SCRIPT SYNTHESIS" highlight color="var(--blue)" />
 
                   {/* Interactive Multilingual Voice & Waveform */}
                   <div className="pt-2.5 mt-2 border-t border-white/10">
@@ -218,9 +222,10 @@ export function SystemCanvas() {
                 width={nodes[3].width}
               >
                 <div className="flex flex-col">
-                  <DataRow label="Inputs" value="Enhanced Photo + Voice" />
-                  <DataRow label="Process" value="AI Description & Metadata" highlight color="var(--emerald)" />
-                  <DataRow label="Output" value="VERIFIED DIGITAL CATALOG" highlight color="var(--emerald)" />
+                  <DataRow label="Taxonomy" value="Automated Craft Classification" />
+                  <DataRow label="Metadata" value="GI Tag & Multi-Platform SEO" />
+                  <DataRow label="Compliance" value="Verified Craft Certification" />
+                  <DataRow label="Status" value="VERIFIED DIGITAL CATALOG" highlight color="var(--emerald)" />
                 </div>
               </NodeCard>
 
@@ -236,9 +241,10 @@ export function SystemCanvas() {
                 width={nodes[4].width}
               >
                 <div className="flex flex-col">
-                  <DataRow label="Factor" value="Market Demand Trends" />
-                  <DataRow label="Factor" value="Fair Labor & Material Cost" />
-                  <DataRow label="Target" value="+28% Artisan Profit Margin" highlight color="var(--rose)" />
+                  <DataRow label="Baseline" value="Fair Living-Wage Algorithm" />
+                  <DataRow label="Elasticity" value="Real-Time Demand Trends" />
+                  <DataRow label="Margin" value="+28% Direct Artisan Return" />
+                  <DataRow label="Status" value="OPTIMIZED FAIR VALUE" highlight color="var(--rose)" />
                 </div>
               </NodeCard>
 
@@ -254,9 +260,10 @@ export function SystemCanvas() {
                 width={nodes[5].width}
               >
                 <div className="flex flex-col">
-                  <DataRow label="Feature" value="Semantic Catalog Index" />
-                  <DataRow label="Feature" value="Buyer Persona Matching" />
-                  <DataRow label="Match" value="94% Direct Buyer Affinity" highlight color="var(--violet)" />
+                  <DataRow label="Search" value="Vector Semantic Embeddings" />
+                  <DataRow label="Buyer Feed" value="Institutional Persona Match" />
+                  <DataRow label="Affinity" value="94% Direct Buyer Relevance" />
+                  <DataRow label="Status" value="ACTIVE BUYER DISCOVERY" highlight color="var(--violet)" />
                 </div>
               </NodeCard>
 
@@ -272,9 +279,10 @@ export function SystemCanvas() {
                 width={nodes[6].width}
               >
                 <div className="flex flex-col">
-                  <DataRow label="Channel" value="B2B Institutional Wholesalers" />
-                  <DataRow label="Channel" value="Government E-Market (GeM)" />
-                  <DataRow label="Channel" value="Direct Global D2C" highlight color="var(--blue)" />
+                  <DataRow label="Wholesale" value="B2B Institutional & Corporate" />
+                  <DataRow label="Government" value="Direct GeM & ONDC Pipeline" />
+                  <DataRow label="Direct D2C" value="Global Consumer Export" />
+                  <DataRow label="Status" value="OMNICHANNEL DISTRIBUTION" highlight color="var(--blue)" />
                 </div>
               </NodeCard>
 
@@ -290,9 +298,10 @@ export function SystemCanvas() {
                 width={nodes[7].width}
               >
                 <div className="flex flex-col">
-                  <DataRow label="Reach" value="Pan-India & Global Reach" />
-                  <DataRow label="Revenue" value="Steady Year-Round Cashflow" />
-                  <DataRow label="Outcome" value="Sustainable Livelihood" highlight color="var(--copper)" />
+                  <DataRow label="Footprint" value="Pan-India & International Trade" />
+                  <DataRow label="Cash Flow" value="Predictable Year-Round Liquidity" />
+                  <DataRow label="Impact" value="Sustainable Cultural Livelihood" />
+                  <DataRow label="Status" value="CONTINUOUS LIFETIME ACCESS" highlight color="var(--copper)" />
                 </div>
               </NodeCard>
             </div>

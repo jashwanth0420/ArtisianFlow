@@ -58,9 +58,10 @@ const STEP_DATA: StepDetail[] = [
     icon: <UserRound size={16} />,
     statusBadge: 'Traditional Craftsman',
     rows: [
-      { label: 'Input', value: 'Handmade Physical Product' },
-      { label: 'Input', value: 'Artisan Voice Description' },
-      { label: 'Struggle', value: 'Limited Local Reach & Middlemen', highlight: true },
+      { label: 'Product', value: 'Handcrafted Bell Metal Artifact' },
+      { label: 'Material', value: 'Cast Brass & Copper Alloy' },
+      { label: 'Heritage', value: 'Lost-Wax Dhokra Tradition' },
+      { label: 'Status', value: 'PHYSICAL INVENTORY', highlight: true },
     ]
   },
   {
@@ -71,9 +72,10 @@ const STEP_DATA: StepDetail[] = [
     icon: <WandSparkles size={16} />,
     statusBadge: 'Automated Enhancement',
     rows: [
-      { label: 'Process', value: '4K Studio Image Enhancement' },
-      { label: 'Process', value: 'Intelligent Background Removal' },
-      { label: 'Result', value: 'E-Commerce Ready Photography', highlight: true },
+      { label: 'Enhance', value: '4K Multi-Surface Studio Polish' },
+      { label: 'Lighting', value: 'Automated Shadow Correction' },
+      { label: 'Format', value: 'E-Commerce Standard (1:1)' },
+      { label: 'Status', value: 'STUDIO READY', highlight: true },
     ]
   },
   {
@@ -84,9 +86,10 @@ const STEP_DATA: StepDetail[] = [
     icon: <Languages size={16} />,
     statusBadge: '22+ Indian Languages',
     rows: [
-      { label: 'Input', value: 'Dialect / Regional Voice Audio' },
-      { label: 'Process', value: 'Speech → Text → Neural Translation', highlight: true },
-      { label: 'Output', value: 'Multi-Language Global Scripts' },
+      { label: 'Dialects', value: '22+ Scheduled Indian Languages' },
+      { label: 'Engine', value: 'Dialect-Aware Neural STT' },
+      { label: 'Copy', value: 'Localized Regional Storytelling' },
+      { label: 'Status', value: 'DUAL SCRIPT SYNTHESIS', highlight: true },
     ]
   },
   {
@@ -97,9 +100,10 @@ const STEP_DATA: StepDetail[] = [
     icon: <Cpu size={16} />,
     statusBadge: 'Automated Indexing',
     rows: [
-      { label: 'Inputs', value: 'Enhanced Photo + Voice Translation' },
-      { label: 'Process', value: 'Rich Metadata & Category Extraction' },
-      { label: 'Output', value: 'Verified Digital Catalog Asset', highlight: true },
+      { label: 'Taxonomy', value: 'Automated Craft Classification' },
+      { label: 'Metadata', value: 'GI Tag & Multi-Platform SEO' },
+      { label: 'Compliance', value: 'Verified Craft Certification' },
+      { label: 'Status', value: 'VERIFIED DIGITAL CATALOG', highlight: true },
     ]
   },
   {
@@ -110,12 +114,14 @@ const STEP_DATA: StepDetail[] = [
     icon: <TrendingUp size={16} />,
     statusBadge: 'Parallel Optimization',
     rows: [
-      { label: 'Dynamic Pricing', value: 'Fair-Wage + Market Cost Algorithm' },
-      { label: 'Profit Margin', value: 'Target: +28% Artisan Take-Home', highlight: true },
+      { label: 'Baseline', value: 'Fair Living-Wage Algorithm' },
+      { label: 'Elasticity', value: 'Real-Time Demand Trends' },
+      { label: 'Target Margin', value: '+28% Direct Artisan Return', highlight: true },
     ],
     branchRows: [
-      { label: 'Discovery Match', value: 'Semantic Buyer Recommendation' },
-      { label: 'Buyer Affinity', value: '94% Direct Buyer Match', highlight: true },
+      { label: 'Search Model', value: 'Vector Semantic Embeddings' },
+      { label: 'Buyer Feed', value: 'Institutional Persona Match' },
+      { label: 'Affinity', value: '94% Direct Buyer Relevance', highlight: true },
     ]
   },
   {
@@ -126,9 +132,9 @@ const STEP_DATA: StepDetail[] = [
     icon: <Store size={16} />,
     statusBadge: 'Omnichannel Pipeline',
     rows: [
-      { label: 'Wholesale', value: 'B2B Institutional Wholesalers' },
-      { label: 'Government', value: 'Direct GeM Integration' },
-      { label: 'Direct', value: 'Global D2C Marketplace Access', highlight: true },
+      { label: 'Wholesale', value: 'B2B Institutional & Corporate' },
+      { label: 'Government', value: 'Direct GeM & ONDC Pipeline' },
+      { label: 'Direct D2C', value: 'Global Consumer Export', highlight: true },
     ]
   },
   {
@@ -139,9 +145,9 @@ const STEP_DATA: StepDetail[] = [
     icon: <Globe size={16} />,
     statusBadge: 'Continuous Growth',
     rows: [
-      { label: 'Market Reach', value: 'Pan-India & International Reach' },
-      { label: 'Cash Flow', value: 'Consistent Year-Round Revenue' },
-      { label: 'Impact', value: 'Sustainable Artisan Livelihood', highlight: true },
+      { label: 'Footprint', value: 'Pan-India & International Trade' },
+      { label: 'Cash Flow', value: 'Predictable Year-Round Liquidity' },
+      { label: 'Impact', value: 'Sustainable Cultural Livelihood', highlight: true },
     ]
   }
 ];
